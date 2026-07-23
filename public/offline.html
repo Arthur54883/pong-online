@@ -1,0 +1,1185 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<title>Pong</title>
+<style>
+  body {
+    margin: 0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #111;
+    font-family: Arial, sans-serif;
+    color: #eee;
+  }
+  h1 {
+    margin: 0 0 10px 0;
+    letter-spacing: 4px;
+  }
+  canvas {
+    background: #000;
+    border: 2px solid #555;
+  }
+  p {
+    color: #999;
+    font-size: 14px;
+  }
+  .quadro {
+    position: relative;
+  }
+  #telaInicial {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.88);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 0 30px;
+    box-sizing: border-box;
+  }
+  #telaInicial h2 {
+    font-size: 42px;
+    letter-spacing: 6px;
+    margin: 0 0 10px 0;
+  }
+  #telaInicial p {
+    margin: 4px 0;
+  }
+  #botaoIniciar {
+    margin-top: 24px;
+    padding: 14px 36px;
+    font-size: 20px;
+    font-weight: bold;
+    color: #fff;
+    background: #4caf50;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  #botaoIniciar:hover {
+    background: #43a047;
+  }
+  .botoesMenu {
+    display: flex;
+    gap: 14px;
+  }
+  #botaoLoja,
+  #botaoPersonalizar {
+    margin-top: 24px;
+    padding: 14px 36px;
+    font-size: 20px;
+    font-weight: bold;
+    color: #111;
+    background: #fff;
+    border: 2px solid #fff;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  #botaoLoja:hover,
+  #botaoPersonalizar:hover {
+    background: #ddd;
+  }
+  #telaLoja {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.92);
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 20px;
+    box-sizing: border-box;
+  }
+  #telaLoja h2 {
+    font-size: 34px;
+    letter-spacing: 4px;
+    margin: 0 0 6px 0;
+  }
+  #moedasTexto {
+    color: #ffcc00;
+    font-weight: bold;
+  }
+  #listaItens {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    max-width: 500px;
+    margin: 16px 0;
+    max-height: 320px;
+    overflow-y: auto;
+  }
+  .itemVazio {
+    color: #777;
+    font-style: italic;
+  }
+  .itemLoja {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    background: #1b1b1b;
+    border: 1px solid #444;
+    border-radius: 8px;
+    padding: 10px 14px;
+    text-align: left;
+  }
+  .itemInfo strong {
+    color: #fff;
+  }
+  .itemInfo p {
+    margin: 2px 0 0 0;
+    font-size: 12px;
+  }
+  .botaoComprar {
+    flex-shrink: 0;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: bold;
+    color: #fff;
+    background: #4caf50;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  .botaoComprar:disabled {
+    background: #555;
+    cursor: default;
+  }
+  #botaoVoltarLoja {
+    padding: 10px 28px;
+    font-size: 16px;
+    color: #fff;
+    background: #333;
+    border: 2px solid #666;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  #botaoVoltarLoja:hover {
+    background: #444;
+  }
+  #telaOpcoes {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.92);
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 20px;
+    box-sizing: border-box;
+  }
+  #telaOpcoes h2 {
+    font-size: 34px;
+    letter-spacing: 4px;
+    margin: 0 0 6px 0;
+  }
+  .botoesNivel {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    max-width: 260px;
+    margin: 16px 0;
+  }
+  .botaoNivel {
+    padding: 12px 20px;
+    font-size: 16px;
+    font-weight: bold;
+    color: #fff;
+    background: #333;
+    border: 2px solid #666;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  .botaoNivel:hover {
+    background: #444;
+  }
+  .botaoNivel.selecionado {
+    background: #4caf50;
+    border-color: #4caf50;
+  }
+  #botaoVoltarOpcoes {
+    padding: 10px 28px;
+    font-size: 16px;
+    color: #fff;
+    background: #333;
+    border: 2px solid #666;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  #botaoVoltarOpcoes:hover {
+    background: #444;
+  }
+</style>
+</head>
+<body>
+  <h1>PONG</h1>
+  <div class="quadro">
+    <canvas id="jogo" width="800" height="500"></canvas>
+    <div id="telaInicial">
+      <h2>PONG</h2>
+      <p>Você (raquete esquerda) contra o computador</p>
+      <p>W / S: mover &nbsp;&nbsp;|&nbsp;&nbsp; Espaço: lançar a bola</p>
+      <p>E, 1-7: poderes comprados na loja &nbsp;&nbsp;|&nbsp;&nbsp; M: música &nbsp;&nbsp;|&nbsp;&nbsp; R: reiniciar</p>
+      <p>Moedas: <span id="moedasTextoMenu">0</span></p>
+      <p>Nível da IA: <span id="nivelTextoMenu">Médio</span></p>
+      <div class="botoesMenu">
+        <button id="botaoIniciar">Iniciar Jogo</button>
+        <button id="botaoLoja">Loja</button>
+        <button id="botaoPersonalizar">Personalização</button>
+      </div>
+    </div>
+    <div id="telaLoja">
+      <h2>LOJA</h2>
+      <p>Moedas: <span id="moedasTexto">0</span></p>
+      <div id="listaItens"></div>
+      <button id="botaoVoltarLoja">Voltar</button>
+    </div>
+    <div id="telaOpcoes">
+      <h2>PERSONALIZAÇÃO</h2>
+      <p>Escolha o nível da IA</p>
+      <div class="botoesNivel">
+        <button class="botaoNivel" data-nivel="facil">Fácil</button>
+        <button class="botaoNivel" data-nivel="medio">Médio</button>
+        <button class="botaoNivel" data-nivel="dificil">Difícil</button>
+        <button class="botaoNivel" data-nivel="hard">Hard</button>
+        <button class="botaoNivel" data-nivel="profissional">Profissional</button>
+      </div>
+      <button id="botaoVoltarOpcoes">Voltar</button>
+    </div>
+  </div>
+  <p>Você: W / S &nbsp;&nbsp;|&nbsp;&nbsp; Espaço: lançar &nbsp;&nbsp;|&nbsp;&nbsp; E, 1-7: poderes da loja &nbsp;&nbsp;|&nbsp;&nbsp; M: música &nbsp;&nbsp;|&nbsp;&nbsp; R: reiniciar</p>
+
+<script>
+const canvas = document.getElementById("jogo");
+const ctx = canvas.getContext("2d");
+
+const LARGURA = canvas.width;
+const ALTURA = canvas.height;
+
+// --- configurações das raquetes ---
+const raqueteLargura = 12;
+const raqueteAltura = 90;
+const velocidadeRaquete = 6;
+
+const jogador1 = {
+  x: 20,
+  y: ALTURA / 2 - raqueteAltura / 2,
+  altura: raqueteAltura, // pode crescer temporariamente com o poder "Raquete Grande"
+  cima: false,
+  baixo: false,
+  pontos: 0
+};
+
+const jogador2 = {
+  x: LARGURA - 20 - raqueteLargura,
+  y: ALTURA / 2 - raqueteAltura / 2,
+  cima: false,
+  baixo: false,
+  pontos: 0
+};
+
+// --- bola ---
+const bola = {
+  x: LARGURA / 2,
+  y: ALTURA / 2,
+  raio: 8,
+  velX: 2.2,
+  velY: 1.5,
+  parada: false
+};
+
+function resetarBola(direcao) {
+  bola.x = LARGURA / 2;
+  bola.y = ALTURA / 2;
+  bola.velX = 2.2 * direcao;
+  bola.velY = (Math.random() * 1.8 - 0.9) || 1.5;
+  bola.parada = true; // espera o jogador apertar espaço
+}
+
+// --- efeitos globais que os poderes da loja ligam/desligam ---
+let fatorVelocidadeBola = 1; // usado pela Câmera Lenta
+let iaCongelada = false; // usado por Congelar IA
+let bolaCongelada = false; // usado por Congelar Bola
+let fantasmaRuido = 0; // usado por Bola Fantasma (faz a IA errar a leitura da bola)
+let bolasExtras = []; // bolas criadas pelo Multi-bola
+let mensagemPoder = null; // { texto, cor, tempo } exibida depois de usar Sorte ou Escudo
+
+// --- poderes compráveis na loja (cada um evolui até o nível 3) ---
+const poderes = {
+  superChute: {
+    nome: "Super Chute",
+    tecla: "E",
+    nivel: 0,
+    armado: false,
+    niveis: [
+      { custo: 8, multiplicador: 1.3 },
+      { custo: 12, multiplicador: 1.4 },
+      { custo: 16, multiplicador: 1.6 }
+    ],
+    cooldownTotal: 8,
+    cooldownRestante: 0,
+    descricaoNivel(cfg) {
+      return `Próxima rebatida sai ${Math.round((cfg.multiplicador - 1) * 100)}% mais forte`;
+    },
+    ativar() {
+      this.armado = true; // dispara de verdade só na próxima rebatida sua
+    }
+  },
+
+  raqueteGrande: {
+    nome: "Raquete Grande",
+    tecla: "1",
+    nivel: 0,
+    niveis: [
+      { custo: 10, duracao: 6, multiplicador: 1.4 },
+      { custo: 14, duracao: 7, multiplicador: 1.6 },
+      { custo: 20, duracao: 8, multiplicador: 1.8 }
+    ],
+    cooldownTotal: 15,
+    cooldownRestante: 0,
+    ativo: false,
+    tempoRestanteEfeito: 0,
+    descricaoNivel(cfg) {
+      return `Raquete +${Math.round((cfg.multiplicador - 1) * 100)}%, dura ${cfg.duracao}s`;
+    },
+    ativar() {
+      const cfg = this.niveis[this.nivel - 1];
+      const alturaAntiga = jogador1.altura;
+      const alturaNova = raqueteAltura * cfg.multiplicador;
+      jogador1.y -= (alturaNova - alturaAntiga) / 2;
+      jogador1.altura = alturaNova;
+      this.ativo = true;
+      this.tempoRestanteEfeito = cfg.duracao;
+      this.cooldownRestante = this.cooldownTotal;
+    },
+    desativar() {
+      jogador1.y += (jogador1.altura - raqueteAltura) / 2;
+      jogador1.altura = raqueteAltura;
+    }
+  },
+
+  cameraLenta: {
+    nome: "Câmera Lenta",
+    tecla: "2",
+    nivel: 0,
+    niveis: [
+      { custo: 10, duracao: 5, fator: 0.5 },
+      { custo: 14, duracao: 6, fator: 0.4 },
+      { custo: 20, duracao: 7, fator: 0.3 }
+    ],
+    cooldownTotal: 16,
+    cooldownRestante: 0,
+    ativo: false,
+    tempoRestanteEfeito: 0,
+    descricaoNivel(cfg) {
+      return `Bola a ${Math.round(cfg.fator * 100)}% da velocidade, dura ${cfg.duracao}s`;
+    },
+    ativar() {
+      const cfg = this.niveis[this.nivel - 1];
+      fatorVelocidadeBola = cfg.fator;
+      this.ativo = true;
+      this.tempoRestanteEfeito = cfg.duracao;
+      this.cooldownRestante = this.cooldownTotal;
+    },
+    desativar() {
+      fatorVelocidadeBola = 1;
+    }
+  },
+
+  congelarIA: {
+    nome: "Congelar IA",
+    tecla: "3",
+    nivel: 0,
+    niveis: [
+      { custo: 10, duracao: 2 },
+      { custo: 14, duracao: 3 },
+      { custo: 20, duracao: 4 }
+    ],
+    cooldownTotal: 18,
+    cooldownRestante: 0,
+    ativo: false,
+    tempoRestanteEfeito: 0,
+    descricaoNivel(cfg) {
+      return `Trava o computador por ${cfg.duracao}s`;
+    },
+    ativar() {
+      const cfg = this.niveis[this.nivel - 1];
+      iaCongelada = true;
+      this.ativo = true;
+      this.tempoRestanteEfeito = cfg.duracao;
+      this.cooldownRestante = this.cooldownTotal;
+    },
+    desativar() {
+      iaCongelada = false;
+    }
+  },
+
+  bolaFantasma: {
+    nome: "Bola Fantasma",
+    tecla: "4",
+    nivel: 0,
+    armado: false,
+    niveis: [
+      { custo: 10, duracao: 3, ruido: 40 },
+      { custo: 14, duracao: 4, ruido: 55 },
+      { custo: 20, duracao: 5, ruido: 70 }
+    ],
+    cooldownTotal: 16,
+    cooldownRestante: 0,
+    ativo: false,
+    tempoRestanteEfeito: 0,
+    descricaoNivel(cfg) {
+      return `Confunde a IA por ${cfg.duracao}s após a rebatida`;
+    },
+    ativar() {
+      this.armado = true; // dispara de verdade só na próxima rebatida sua
+    },
+    desativar() {
+      fantasmaRuido = 0;
+    }
+  },
+
+  multibola: {
+    nome: "Multi-bola",
+    tecla: "5",
+    nivel: 0,
+    niveis: [
+      { custo: 16, duracao: 8, extras: 1 },
+      { custo: 20, duracao: 10, extras: 1 },
+      { custo: 28, duracao: 12, extras: 2 }
+    ],
+    cooldownTotal: 22,
+    cooldownRestante: 0,
+    ativo: false,
+    tempoRestanteEfeito: 0,
+    descricaoNivel(cfg) {
+      return `+${cfg.extras} bola(s) em jogo por ${cfg.duracao}s`;
+    },
+    ativar() {
+      const cfg = this.niveis[this.nivel - 1];
+      for (let i = 0; i < cfg.extras; i++) {
+        bolasExtras.push({
+          x: bola.x,
+          y: bola.y,
+          raio: 8,
+          velX: (Math.random() < 0.5 ? -1 : 1) * (2 + Math.random() * 2),
+          velY: Math.random() * 4 - 2 || 2
+        });
+      }
+      this.ativo = true;
+      this.tempoRestanteEfeito = cfg.duracao;
+      this.cooldownRestante = this.cooldownTotal;
+    },
+    desativar() {
+      bolasExtras.length = 0;
+    }
+  },
+
+  congelarBola: {
+    nome: "Congelar Bola",
+    tecla: "6",
+    nivel: 0,
+    niveis: [
+      { custo: 10, duracao: 1.5 },
+      { custo: 14, duracao: 2.5 },
+      { custo: 18, duracao: 3.5 }
+    ],
+    cooldownTotal: 14,
+    cooldownRestante: 0,
+    ativo: false,
+    tempoRestanteEfeito: 0,
+    descricaoNivel(cfg) {
+      return `Congela a bola no lugar por ${cfg.duracao}s`;
+    },
+    ativar() {
+      const cfg = this.niveis[this.nivel - 1];
+      bolaCongelada = true;
+      this.ativo = true;
+      this.tempoRestanteEfeito = cfg.duracao;
+      this.cooldownRestante = this.cooldownTotal;
+    },
+    desativar() {
+      bolaCongelada = false;
+    }
+  },
+
+  sorte: {
+    nome: "Poder da Sorte",
+    tecla: "7",
+    nivel: 0,
+    niveis: [
+      { custo: 10, chance: 0.25 },
+      { custo: 14, chance: 0.4 },
+      { custo: 18, chance: 0.55 }
+    ],
+    cooldownTotal: 25,
+    cooldownRestante: 0,
+    descricaoNivel(cfg) {
+      return `${Math.round(cfg.chance * 100)}% de chance de ganhar um ponto na hora`;
+    },
+    ativar() {
+      const cfg = this.niveis[this.nivel - 1];
+      this.cooldownRestante = this.cooldownTotal;
+      if (Math.random() < cfg.chance) {
+        jogador1.pontos++;
+        moedas += 5;
+        tocarSomPoder();
+        resetarBola(-1);
+        mensagemPoder = { texto: "SORTE GRANDE! Ponto garantido!", cor: "#ffcc00", tempo: 2 };
+      } else {
+        mensagemPoder = { texto: "Sem sorte dessa vez...", cor: "#888", tempo: 2 };
+      }
+    }
+  },
+
+  escudo: {
+    nome: "Escudo",
+    tecla: null, // equipado sozinho — sem tecla, testa a sorte automaticamente
+    nivel: 0,
+    niveis: [
+      { custo: 12, chance: 0.35, cooldown: 20 },
+      { custo: 16, chance: 0.5, cooldown: 15 },
+      { custo: 22, chance: 0.7, cooldown: 10 }
+    ],
+    cooldownRestante: 0,
+    descricaoNivel(cfg) {
+      return `${Math.round(cfg.chance * 100)}% de chance de blindar seu gol (recarrega em ${cfg.cooldown}s)`;
+    }
+  }
+};
+
+const TECLA_PARA_PODER = {
+  "1": "raqueteGrande",
+  "2": "cameraLenta",
+  "3": "congelarIA",
+  "4": "bolaFantasma",
+  "5": "multibola",
+  "6": "congelarBola",
+  "7": "sorte"
+};
+
+// atualiza cooldowns, durações de efeito e a mensagem de sorte
+setInterval(() => {
+  if (jogoAcabou) return;
+
+  Object.values(poderes).forEach((p) => {
+    if (p.cooldownRestante > 0) {
+      p.cooldownRestante = Math.max(0, p.cooldownRestante - 0.1);
+    }
+    if (p.ativo) {
+      p.tempoRestanteEfeito = Math.max(0, p.tempoRestanteEfeito - 0.1);
+      if (p.tempoRestanteEfeito <= 0) {
+        p.ativo = false;
+        p.desativar();
+      }
+    }
+  });
+
+  if (mensagemPoder) {
+    mensagemPoder.tempo -= 0.1;
+    if (mensagemPoder.tempo <= 0) mensagemPoder = null;
+  }
+}, 100);
+
+// --- tempo limite da partida ---
+const TEMPO_TOTAL = 5 * 60; // 5 minutos, em segundos
+let tempoRestante = TEMPO_TOTAL;
+let jogoAcabou = false;
+let jogoIniciado = false;
+
+document.getElementById("botaoIniciar").addEventListener("click", () => {
+  jogoIniciado = true;
+  document.getElementById("telaInicial").style.display = "none";
+  if (!audioCtx) iniciarMusica(); // clique conta como interação do usuário
+});
+
+// --- loja de poderes ---
+let moedas = 0; // ganha 1 moeda a cada ponto seu
+
+function atualizarMoedasNaTela() {
+  document.getElementById("moedasTextoMenu").textContent = moedas;
+  document.getElementById("moedasTexto").textContent = moedas;
+}
+
+function renderizarLoja() {
+  atualizarMoedasNaTela();
+  const lista = document.getElementById("listaItens");
+  lista.innerHTML = "";
+
+  Object.values(poderes).forEach((p) => {
+    const maxNivel = p.niveis.length;
+    const noMaximo = p.nivel >= maxNivel;
+    const proximoCfg = noMaximo ? null : p.niveis[p.nivel];
+
+    const card = document.createElement("div");
+    card.className = "itemLoja";
+
+    const info = document.createElement("div");
+    info.className = "itemInfo";
+    const teclaTexto = p.tecla ? `tecla ${p.tecla}` : "automático";
+    const descricaoAtual = p.nivel > 0 ? p.descricaoNivel(p.niveis[p.nivel - 1]) : "ainda não comprado";
+    info.innerHTML = `<strong>${p.nome}</strong> (${teclaTexto})<p>Nível ${p.nivel}/${maxNivel} — ${descricaoAtual}</p>`;
+
+    const botao = document.createElement("button");
+    botao.className = "botaoComprar";
+
+    if (noMaximo) {
+      botao.disabled = true;
+      botao.textContent = "Nível máximo";
+    } else {
+      botao.disabled = moedas < proximoCfg.custo;
+      botao.textContent = `${p.nivel === 0 ? "Comprar" : "Evoluir"} (${proximoCfg.custo})`;
+      botao.addEventListener("click", () => {
+        if (moedas >= proximoCfg.custo) {
+          moedas -= proximoCfg.custo;
+          p.nivel++;
+          renderizarLoja();
+        }
+      });
+    }
+
+    card.appendChild(info);
+    card.appendChild(botao);
+    lista.appendChild(card);
+  });
+}
+
+document.getElementById("botaoLoja").addEventListener("click", () => {
+  document.getElementById("telaInicial").style.display = "none";
+  document.getElementById("telaLoja").style.display = "flex";
+  renderizarLoja();
+});
+
+document.getElementById("botaoVoltarLoja").addEventListener("click", () => {
+  document.getElementById("telaLoja").style.display = "none";
+  document.getElementById("telaInicial").style.display = "flex";
+});
+
+function formatarTempo(segundos) {
+  const min = Math.floor(segundos / 60);
+  const seg = segundos % 60;
+  return `${min}:${seg.toString().padStart(2, "0")}`;
+}
+
+const BONUS_VITORIA = 15; // moedas ganhas ao vencer a partida
+
+setInterval(() => {
+  if (jogoAcabou || bola.parada) return; // só conta o tempo com a bola em jogo
+  tempoRestante--;
+  if (tempoRestante <= 0) {
+    tempoRestante = 0;
+    jogoAcabou = true;
+    if (jogador1.pontos > jogador2.pontos) {
+      moedas += BONUS_VITORIA;
+    }
+  }
+}, 1000);
+
+function reiniciarJogo() {
+  jogador1.pontos = 0;
+  jogador2.pontos = 0;
+  jogador1.altura = raqueteAltura;
+  tempoRestante = TEMPO_TOTAL;
+  jogoAcabou = false;
+  jogoIniciado = false;
+  fatorVelocidadeBola = 1;
+  iaCongelada = false;
+  bolaCongelada = false;
+  fantasmaRuido = 0;
+  bolasExtras = [];
+  mensagemPoder = null;
+
+  Object.values(poderes).forEach((p) => {
+    p.cooldownRestante = 0;
+    p.ativo = false;
+    if ("armado" in p) p.armado = false;
+  });
+
+  resetarBola(1);
+  document.getElementById("telaInicial").style.display = "flex";
+}
+
+// --- música de fundo (gerada por código, sem precisar de arquivo de áudio) ---
+let audioCtx = null;
+let musicaLigada = true;
+let indiceNota = 0;
+
+// melodia simples e original, tocada em loop (frequências em Hz)
+const melodia = [261.63, 293.66, 329.63, 349.23, 392.00, 349.23, 329.63, 293.66];
+const duracaoNota = 0.28; // segundos por nota
+
+function tocarNota(freq) {
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = "triangle";
+  osc.frequency.value = freq;
+
+  const agora = audioCtx.currentTime;
+  gain.gain.setValueAtTime(0.0001, agora);
+  gain.gain.exponentialRampToValueAtTime(0.12, agora + 0.02);
+  gain.gain.exponentialRampToValueAtTime(0.0001, agora + duracaoNota * 0.9);
+
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.start(agora);
+  osc.stop(agora + duracaoNota);
+}
+
+function iniciarMusica() {
+  if (audioCtx) return; // já está tocando
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+  setInterval(() => {
+    if (musicaLigada) tocarNota(melodia[indiceNota]);
+    indiceNota = (indiceNota + 1) % melodia.length;
+  }, duracaoNota * 1000);
+}
+
+// som curto tocado quando alguém marca ponto (duas notas subindo)
+function tocarSomPonto() {
+  if (!audioCtx) return;
+  const agora = audioCtx.currentTime;
+
+  [523.25, 783.99].forEach((freq, i) => {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = "square";
+    osc.frequency.value = freq;
+
+    const inicio = agora + i * 0.09;
+    gain.gain.setValueAtTime(0.0001, inicio);
+    gain.gain.exponentialRampToValueAtTime(0.2, inicio + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, inicio + 0.15);
+
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(inicio);
+    osc.stop(inicio + 0.16);
+  });
+}
+
+// som grave e forte tocado quando o poder especial acerta a bola
+function tocarSomPoder() {
+  if (!audioCtx) return;
+  const agora = audioCtx.currentTime;
+
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = "sawtooth";
+  osc.frequency.setValueAtTime(600, agora);
+  osc.frequency.exponentialRampToValueAtTime(80, agora + 0.2);
+
+  gain.gain.setValueAtTime(0.25, agora);
+  gain.gain.exponentialRampToValueAtTime(0.0001, agora + 0.2);
+
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.start(agora);
+  osc.stop(agora + 0.2);
+}
+
+// --- teclado ---
+document.addEventListener("keydown", (e) => {
+  if (!audioCtx) iniciarMusica(); // navegadores só liberam áudio após interação do usuário
+
+  if (e.key === "w" || e.key === "W") jogador1.cima = true;
+  if (e.key === "s" || e.key === "S") jogador1.baixo = true;
+  if (e.key === " " && bola.parada && !jogoAcabou) bola.parada = false;
+  if (e.key === "m" || e.key === "M") musicaLigada = !musicaLigada;
+  if (e.key === "r" || e.key === "R") reiniciarJogo();
+  if (e.key === "e" || e.key === "E") {
+    const chute = poderes.superChute;
+    if (jogoIniciado && !jogoAcabou && chute.nivel > 0 && chute.cooldownRestante <= 0 && !chute.armado) {
+      chute.ativar();
+    }
+  }
+
+  const idPoder = TECLA_PARA_PODER[e.key];
+  if (idPoder && jogoIniciado && !jogoAcabou) {
+    const p = poderes[idPoder];
+    if (p.nivel > 0 && p.cooldownRestante <= 0 && !p.ativo && !p.armado) {
+      p.ativar();
+    }
+  }
+});
+
+document.addEventListener("keyup", (e) => {
+  if (e.key === "w" || e.key === "W") jogador1.cima = false;
+  if (e.key === "s" || e.key === "S") jogador1.baixo = false;
+});
+
+// --- níveis de dificuldade da IA ---
+// velocidade: quão rápido a raquete se move | margem: "zona morta" antes de reagir (maior = erra mais)
+const NIVEIS_IA = {
+  facil:        { nome: "Fácil",        velocidade: 2.2, margem: 45 },
+  medio:        { nome: "Médio",        velocidade: 3.3, margem: 28 },
+  dificil:      { nome: "Difícil",      velocidade: 4.3, margem: 16 },
+  hard:         { nome: "Hard",         velocidade: 5.5, margem: 8 },
+  profissional: { nome: "Profissional", velocidade: 7.2, margem: 2 }
+};
+
+let velocidadeIA = NIVEIS_IA.medio.velocidade;
+let margemErroIA = NIVEIS_IA.medio.margem;
+let nivelAtual = "medio";
+
+function selecionarNivel(nivel) {
+  const config = NIVEIS_IA[nivel];
+  nivelAtual = nivel;
+  velocidadeIA = config.velocidade;
+  margemErroIA = config.margem;
+
+  document.getElementById("nivelTextoMenu").textContent = config.nome;
+  document.querySelectorAll(".botaoNivel").forEach((btn) => {
+    btn.classList.toggle("selecionado", btn.dataset.nivel === nivel);
+  });
+}
+
+document.querySelectorAll(".botaoNivel").forEach((btn) => {
+  btn.addEventListener("click", () => selecionarNivel(btn.dataset.nivel));
+});
+
+document.getElementById("botaoPersonalizar").addEventListener("click", () => {
+  document.getElementById("telaInicial").style.display = "none";
+  document.getElementById("telaOpcoes").style.display = "flex";
+});
+
+document.getElementById("botaoVoltarOpcoes").addEventListener("click", () => {
+  document.getElementById("telaOpcoes").style.display = "none";
+  document.getElementById("telaInicial").style.display = "flex";
+});
+
+selecionarNivel(nivelAtual); // aplica o nível inicial e marca o botão certo
+
+function moverIA() {
+  if (iaCongelada) return;
+
+  const centroRaquete = jogador2.y + raqueteAltura / 2;
+  let diferenca = bola.y - centroRaquete;
+
+  // Bola Fantasma: faz a IA "ler errado" a posição da bola por um tempo
+  if (fantasmaRuido > 0) {
+    diferenca += Math.random() * fantasmaRuido * 2 - fantasmaRuido;
+  }
+
+  // só reage se a diferença for grande o suficiente (imperfeição proposital)
+  if (Math.abs(diferenca) > margemErroIA) {
+    jogador2.y += Math.sign(diferenca) * velocidadeIA;
+  }
+}
+
+function moverRaquetes() {
+  if (jogador1.cima) jogador1.y -= velocidadeRaquete;
+  if (jogador1.baixo) jogador1.y += velocidadeRaquete;
+
+  moverIA();
+
+  // não deixar sair da tela
+  jogador1.y = Math.max(0, Math.min(ALTURA - jogador1.altura, jogador1.y));
+  jogador2.y = Math.max(0, Math.min(ALTURA - raqueteAltura, jogador2.y));
+}
+
+// física simples usada tanto pela bola principal quanto pelas bolas extras do Multi-bola
+function moverBolaExtra(b) {
+  b.x += b.velX * fatorVelocidadeBola;
+  b.y += b.velY * fatorVelocidadeBola;
+
+  if (b.y - b.raio < 0 || b.y + b.raio > ALTURA) {
+    b.velY *= -1;
+  }
+
+  if (
+    b.x - b.raio < jogador1.x + raqueteLargura &&
+    b.y > jogador1.y &&
+    b.y < jogador1.y + jogador1.altura &&
+    b.velX < 0
+  ) {
+    b.velX *= -1.05;
+  }
+
+  if (
+    b.x + b.raio > jogador2.x &&
+    b.y > jogador2.y &&
+    b.y < jogador2.y + raqueteAltura &&
+    b.velX > 0
+  ) {
+    b.velX *= -1.05;
+  }
+
+  if (b.x < 0) {
+    jogador2.pontos++;
+    tocarSomPonto();
+    return false; // remove esta bola extra
+  }
+
+  if (b.x > LARGURA) {
+    jogador1.pontos++;
+    moedas++;
+    tocarSomPonto();
+    return false;
+  }
+
+  return true; // continua em jogo
+}
+
+function moverBola() {
+  if (bola.parada || bolaCongelada) return;
+
+  bola.x += bola.velX * fatorVelocidadeBola;
+  bola.y += bola.velY * fatorVelocidadeBola;
+
+  // colisão com topo/fundo
+  if (bola.y - bola.raio < 0 || bola.y + bola.raio > ALTURA) {
+    bola.velY *= -1;
+  }
+
+  // colisão com jogador 1
+  if (
+    bola.x - bola.raio < jogador1.x + raqueteLargura &&
+    bola.y > jogador1.y &&
+    bola.y < jogador1.y + jogador1.altura &&
+    bola.velX < 0
+  ) {
+    const impacto = (bola.y - (jogador1.y + jogador1.altura / 2)) / (jogador1.altura / 2);
+
+    if (poderes.superChute.armado) {
+      const cfgChute = poderes.superChute.niveis[poderes.superChute.nivel - 1];
+      bola.velX = Math.abs(bola.velX) * cfgChute.multiplicador; // um pouco mais rápido que a bola já estava
+      poderes.superChute.armado = false;
+      poderes.superChute.cooldownRestante = poderes.superChute.cooldownTotal;
+      tocarSomPoder();
+    } else {
+      bola.velX *= -1.05; // aumenta um pouco a velocidade a cada rebatida
+    }
+    bola.velY = impacto * 5;
+
+    // Bola Fantasma: se estava armado, dispara o efeito agora
+    if (poderes.bolaFantasma.armado) {
+      const cfg = poderes.bolaFantasma.niveis[poderes.bolaFantasma.nivel - 1];
+      poderes.bolaFantasma.armado = false;
+      poderes.bolaFantasma.ativo = true;
+      poderes.bolaFantasma.tempoRestanteEfeito = cfg.duracao;
+      poderes.bolaFantasma.cooldownRestante = poderes.bolaFantasma.cooldownTotal;
+      fantasmaRuido = cfg.ruido;
+    }
+  }
+
+  // colisão com jogador 2
+  if (
+    bola.x + bola.raio > jogador2.x &&
+    bola.y > jogador2.y &&
+    bola.y < jogador2.y + raqueteAltura &&
+    bola.velX > 0
+  ) {
+    bola.velX *= -1.05;
+    const impacto = (bola.y - (jogador2.y + raqueteAltura / 2)) / (raqueteAltura / 2);
+    bola.velY = impacto * 5;
+  }
+
+  // ponto para jogador 2 — o Escudo (se equipado) testa a sorte sozinho
+  if (bola.x < 0) {
+    if (poderes.escudo.nivel > 0 && poderes.escudo.cooldownRestante <= 0) {
+      const cfgEscudo = poderes.escudo.niveis[poderes.escudo.nivel - 1];
+      poderes.escudo.cooldownRestante = cfgEscudo.cooldown;
+
+      if (Math.random() < cfgEscudo.chance) {
+        bola.x = bola.raio + 1;
+        bola.velX = Math.abs(bola.velX);
+        tocarSomPoder();
+        mensagemPoder = { texto: "Escudo bloqueou o gol!", cor: "#00e5ff", tempo: 2 };
+      } else {
+        jogador2.pontos++;
+        tocarSomPonto();
+        resetarBola(1);
+        mensagemPoder = { texto: "Escudo falhou...", cor: "#888", tempo: 2 };
+      }
+    } else {
+      jogador2.pontos++;
+      tocarSomPonto();
+      resetarBola(1);
+    }
+  }
+
+  // ponto para jogador 1
+  if (bola.x > LARGURA) {
+    jogador1.pontos++;
+    moedas++;
+    tocarSomPonto();
+    resetarBola(-1);
+  }
+
+  // atualiza as bolas extras do Multi-bola (removendo as que saíram)
+  bolasExtras = bolasExtras.filter(moverBolaExtra);
+}
+
+// cor que muda continuamente, usada na rede e na borda da quadra
+let matiz = 0;
+
+function desenhar() {
+  const corRede = `hsl(${matiz}, 80%, 60%)`;
+  const corBorda = `hsl(${(matiz + 150) % 360}, 80%, 55%)`;
+
+  // fundo
+  ctx.fillStyle = "#000";
+  ctx.fillRect(0, 0, LARGURA, ALTURA);
+
+  // borda da quadra (dentro do canvas)
+  ctx.strokeStyle = corBorda;
+  ctx.lineWidth = 4;
+  ctx.strokeRect(2, 2, LARGURA - 4, ALTURA - 4);
+  ctx.lineWidth = 1;
+
+  // borda do elemento <canvas> também acompanha a cor
+  canvas.style.borderColor = corBorda;
+
+  // linha central tracejada (rede)
+  ctx.strokeStyle = corRede;
+  ctx.setLineDash([10, 10]);
+  ctx.beginPath();
+  ctx.moveTo(LARGURA / 2, 0);
+  ctx.lineTo(LARGURA / 2, ALTURA);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // raquetes
+  ctx.fillStyle = "#fff";
+  ctx.fillRect(jogador1.x, jogador1.y, raqueteLargura, jogador1.altura);
+  ctx.fillRect(jogador2.x, jogador2.y, raqueteLargura, raqueteAltura);
+
+  // bola principal — some da tela enquanto a Bola Fantasma está ativa
+  if (poderes.bolaFantasma.ativo) {
+    // só quem usou o poder "enxerga": um indicador exclusivo no seu lado da quadra
+    ctx.fillStyle = "#00e5ff";
+    ctx.fillRect(jogador1.x + raqueteLargura + 8, bola.y - 2, 16, 4);
+  } else {
+    ctx.fillStyle = "#fff";
+    ctx.beginPath();
+    ctx.arc(bola.x, bola.y, bola.raio, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // bolas extras do Multi-bola
+  ctx.fillStyle = "#fff";
+  bolasExtras.forEach((b) => {
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, b.raio, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  // placar
+  ctx.font = "40px Arial";
+  ctx.fillText(jogador1.pontos, LARGURA / 2 - 60, 50);
+  ctx.fillText(jogador2.pontos, LARGURA / 2 + 40, 50);
+
+  // cronômetro
+  ctx.font = "20px Arial";
+  ctx.fillStyle = "#999";
+  ctx.textAlign = "center";
+  ctx.fillText(formatarTempo(tempoRestante), LARGURA / 2, 80);
+  ctx.textAlign = "left";
+
+  // status dos poderes comprados (canto superior esquerdo)
+  ctx.font = "13px Arial";
+  let yStatus = 105;
+  Object.values(poderes).forEach((p) => {
+    if (p.nivel === 0) return;
+
+    let texto;
+    let cor;
+    if (p.armado) {
+      texto = `[${p.tecla}] ${p.nome}: ARMADO`;
+      cor = "#ffcc00";
+    } else if (p.ativo) {
+      texto = `[${p.tecla}] ${p.nome}: ativo (${p.tempoRestanteEfeito.toFixed(1)}s)`;
+      cor = "#4caf50";
+    } else if (p.cooldownRestante > 0) {
+      texto = `${p.tecla ? "[" + p.tecla + "] " : ""}${p.nome}: ${p.cooldownRestante.toFixed(1)}s`;
+      cor = "#777";
+    } else {
+      texto = `${p.tecla ? "[" + p.tecla + "] " : ""}${p.nome}: pronto`;
+      cor = "#4caf50";
+    }
+
+    ctx.fillStyle = cor;
+    ctx.fillText(texto, 20, yStatus);
+    yStatus += 15;
+  });
+
+  // mensagem de Sorte ou Escudo
+  if (mensagemPoder) {
+    ctx.font = "22px Arial";
+    ctx.fillStyle = mensagemPoder.cor;
+    ctx.textAlign = "center";
+    ctx.fillText(mensagemPoder.texto, LARGURA / 2, ALTURA / 2 - 60);
+    ctx.textAlign = "left";
+  }
+
+
+  // moedas (canto inferior direito)
+  ctx.fillStyle = "#ffcc00";
+  ctx.textAlign = "right";
+  ctx.fillText(`Moedas: ${moedas}`, LARGURA - 20, ALTURA - 20);
+  ctx.textAlign = "left";
+
+  if (bola.parada && !jogoAcabou) {
+    ctx.font = "20px Arial";
+    ctx.fillStyle = "#aaa";
+    ctx.textAlign = "center";
+    ctx.fillText("Pressione ESPAÇO para lançar a bola", LARGURA / 2, ALTURA / 2 + 60);
+    ctx.textAlign = "left";
+  }
+
+  if (jogoAcabou) {
+    ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+    ctx.fillRect(0, 0, LARGURA, ALTURA);
+
+    let mensagem;
+    if (jogador1.pontos > jogador2.pontos) mensagem = "Você venceu!";
+    else if (jogador2.pontos > jogador1.pontos) mensagem = "O computador venceu!";
+    else mensagem = "Empate!";
+
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#fff";
+    ctx.font = "36px Arial";
+    ctx.fillText("Tempo esgotado!", LARGURA / 2, ALTURA / 2 - 30);
+    ctx.font = "28px Arial";
+    ctx.fillText(mensagem, LARGURA / 2, ALTURA / 2 + 15);
+    ctx.font = "18px Arial";
+    ctx.fillStyle = "#aaa";
+    ctx.fillText("Pressione R para jogar novamente", LARGURA / 2, ALTURA / 2 + 55);
+    ctx.textAlign = "left";
+  }
+}
+
+function loop() {
+  if (jogoIniciado && !jogoAcabou) {
+    moverRaquetes();
+    moverBola();
+  }
+  matiz = (matiz + 0.6) % 360;
+  desenhar();
+  requestAnimationFrame(loop);
+}
+
+resetarBola(1);
+loop();
+</script>
+</body>
+</html>

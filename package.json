@@ -1,0 +1,17 @@
+{
+  "name": "pong-online",
+  "version": "1.0.0",
+  "description": "Pong multiplayer online com contas de jogador",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "socket.io": "^4.7.5",
+    "bcryptjs": "^2.4.3"
+  }
+}
