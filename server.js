@@ -6,6 +6,7 @@ const bcrypt = require("bcryptjs");
 const { Server } = require("socket.io");
 
 const db = require("./database.js");
+const { CATALOGO_PODERES } = require("./poderes.js");
 
 const app = express();
 const servidor = http.createServer(app);
@@ -73,6 +74,50 @@ app.get("/api/perfil", (req, res) => {
   res.json({ usuario: usuarioPublico(usuario) });
 });
 
+function usuarioAutenticado(req) {
+  const token = (req.headers.authorization || "").replace("Bearer ", "");
+  const usuarioId = tokens.get(token);
+  return usuarioId ? db.buscarPorId(usuarioId) : null;
+}
+
+app.get("/api/loja", (req, res) => {
+  const usuario = usuarioAutenticado(req);
+  if (!usuario) return res.status(401).json({ erro: "Token inválido." });
+
+  res.json({
+    moedas: usuario.moedas,
+    poderes: JSON.parse(usuario.poderes),
+    catalogo: CATALOGO_PODERES
+  });
+});
+
+app.post("/api/comprar", (req, res) => {
+  const usuario = usuarioAutenticado(req);
+  if (!usuario) return res.status(401).json({ erro: "Token inválido." });
+
+  const { poderId } = req.body || {};
+  const definicao = CATALOGO_PODERES[poderId];
+  if (!definicao) return res.status(400).json({ erro: "Poder inválido." });
+
+  const poderesAtuais = JSON.parse(usuario.poderes);
+  const nivelAtual = poderesAtuais[poderId] || 0;
+
+  if (nivelAtual >= definicao.niveis.length) {
+    return res.status(400).json({ erro: "Esse poder já está no nível máximo." });
+  }
+
+  const custo = definicao.niveis[nivelAtual].custo;
+  if (usuario.moedas < custo) {
+    return res.status(400).json({ erro: "Moedas insuficientes." });
+  }
+
+  poderesAtuais[poderId] = nivelAtual + 1;
+  db.atualizarPoderes(usuario.id, JSON.stringify(poderesAtuais));
+  db.atualizarMoedas(usuario.id, usuario.moedas - custo);
+
+  res.json({ moedas: usuario.moedas - custo, poderes: poderesAtuais });
+});
+
 // --- física do jogo (mesmas medidas do jogo original) ---
 const LARGURA = 800;
 const ALTURA = 500;
@@ -81,6 +126,9 @@ const RAQUETE_ALTURA = 90;
 const VELOCIDADE_RAQUETE = 6;
 const TEMPO_TOTAL = 5 * 60; // 5 minutos
 const BONUS_VITORIA = 15;
+const DT = 1 / 60; // duração de cada tick de física, em segundos
+
+const IDS_PODERES_ATIVAVEIS = Object.keys(CATALOGO_PODERES).filter((id) => id !== "escudo");
 
 function novaBola(direcao) {
   return {
@@ -93,11 +141,47 @@ function novaBola(direcao) {
   };
 }
 
+function poderesRuntimeDoUsuario(usuarioId) {
+  const usuarioDb = db.buscarPorId(usuarioId);
+  const poderesSalvos = JSON.parse(usuarioDb.poderes);
+  const runtime = {};
+  Object.keys(CATALOGO_PODERES).forEach((id) => {
+    runtime[id] = {
+      nivel: poderesSalvos[id] || 0,
+      cooldownRestante: 0,
+      ativo: false,
+      tempoRestanteEfeito: 0,
+      armado: false
+    };
+  });
+  return runtime;
+}
+
+function criarJogador(socket, usuarioId, username) {
+  return {
+    socket,
+    usuarioId,
+    username,
+    y: ALTURA / 2 - RAQUETE_ALTURA / 2,
+    altura: RAQUETE_ALTURA,
+    cima: false,
+    baixo: false,
+    travado: false,
+    pontos: 0,
+    poderes: poderesRuntimeDoUsuario(usuarioId),
+    mensagem: null
+  };
+}
+
 function novaSala(idSala) {
   return {
     id: idSala,
-    jogadores: [], // { socket, usuarioId, username, cima, baixo, pontos }
+    jogadores: [], // criados via criarJogador()
     bola: novaBola(1),
+    bolasExtras: [],
+    fatorVelocidadeBola: 1,
+    bolaCongelada: false,
+    fantasma: { ativoPara: null }, // índice do jogador que fica sem ver a bola
     tempoRestante: TEMPO_TOTAL,
     acabou: false,
     intervaloFisica: null,
@@ -108,19 +192,106 @@ function novaSala(idSala) {
 const salas = new Map();
 let filaEspera = null; // socket esperando oponente
 
+function desativarPoder(sala, jogador, id) {
+  switch (id) {
+    case "raqueteGrande":
+      jogador.y += (jogador.altura - RAQUETE_ALTURA) / 2;
+      jogador.altura = RAQUETE_ALTURA;
+      break;
+    case "cameraLenta":
+      sala.fatorVelocidadeBola = 1;
+      break;
+    case "congelarOponente": {
+      const oponente = sala.jogadores.find((j) => j !== jogador);
+      if (oponente) oponente.travado = false;
+      break;
+    }
+    case "bolaFantasma":
+      if (sala.fantasma.ativoPara !== null) sala.fantasma.ativoPara = null;
+      break;
+    case "multibola":
+      sala.bolasExtras = [];
+      break;
+    case "congelarBola":
+      sala.bolaCongelada = false;
+      break;
+  }
+}
+
+function atualizarPoderesJogador(sala, jogador) {
+  Object.entries(jogador.poderes).forEach(([id, p]) => {
+    if (p.cooldownRestante > 0) p.cooldownRestante = Math.max(0, p.cooldownRestante - DT);
+    if (p.ativo) {
+      p.tempoRestanteEfeito = Math.max(0, p.tempoRestanteEfeito - DT);
+      if (p.tempoRestanteEfeito <= 0) {
+        p.ativo = false;
+        desativarPoder(sala, jogador, id);
+      }
+    }
+  });
+  if (jogador.mensagem) {
+    jogador.mensagem.tempo -= DT;
+    if (jogador.mensagem.tempo <= 0) jogador.mensagem = null;
+  }
+}
+
+function moverBolaExtra(sala, b) {
+  const [j1, j2] = sala.jogadores;
+  b.x += b.velX * sala.fatorVelocidadeBola;
+  b.y += b.velY * sala.fatorVelocidadeBola;
+
+  if (b.y - b.raio < 0 || b.y + b.raio > ALTURA) b.velY *= -1;
+
+  if (b.x - b.raio < 20 + RAQUETE_LARGURA && b.y > j1.y && b.y < j1.y + j1.altura && b.velX < 0) {
+    b.velX *= -1.05;
+  }
+  const xJogador2 = LARGURA - 20 - RAQUETE_LARGURA;
+  if (b.x + b.raio > xJogador2 && b.y > j2.y && b.y < j2.y + j2.altura && b.velX > 0) {
+    b.velX *= -1.05;
+  }
+
+  if (b.x < 0) {
+    j2.pontos++;
+    return false;
+  }
+  if (b.x > LARGURA) {
+    j1.pontos++;
+    return false;
+  }
+  return true;
+}
+
 function estadoParaCliente(sala, indiceJogador) {
   const eu = sala.jogadores[indiceJogador];
   const oponente = sala.jogadores[1 - indiceJogador];
+  const bolaOculta = sala.fantasma.ativoPara === indiceJogador;
+
   return {
-    bola: sala.bola,
+    bola: { x: sala.bola.x, y: sala.bola.y, raio: sala.bola.raio, parada: sala.bola.parada, oculta: bolaOculta },
+    bolasExtras: sala.bolasExtras,
     meuY: eu.y,
     oponenteY: oponente.y,
+    minhaAltura: eu.altura,
+    oponenteAltura: oponente.altura,
     meusPontos: eu.pontos,
     oponentePontos: oponente.pontos,
     meuNome: eu.username,
     oponenteNome: oponente.username,
     tempoRestante: sala.tempoRestante,
-    acabou: sala.acabou
+    acabou: sala.acabou,
+    mensagem: eu.mensagem,
+    meusPoderes: Object.fromEntries(
+      Object.entries(eu.poderes).map(([id, p]) => [
+        id,
+        {
+          nivel: p.nivel,
+          ativo: p.ativo,
+          armado: p.armado,
+          cooldownRestante: Math.round(p.cooldownRestante * 10) / 10,
+          tempoRestanteEfeito: Math.round(p.tempoRestanteEfeito * 10) / 10
+        }
+      ])
+    )
   };
 }
 
@@ -129,16 +300,25 @@ function iniciarFisica(sala) {
     if (sala.acabou) return;
     const [j1, j2] = sala.jogadores;
 
-    // move as raquetes
-    if (j1.cima) j1.y = Math.max(0, j1.y - VELOCIDADE_RAQUETE);
-    if (j1.baixo) j1.y = Math.min(ALTURA - RAQUETE_ALTURA, j1.y + VELOCIDADE_RAQUETE);
-    if (j2.cima) j2.y = Math.max(0, j2.y - VELOCIDADE_RAQUETE);
-    if (j2.baixo) j2.y = Math.min(ALTURA - RAQUETE_ALTURA, j2.y + VELOCIDADE_RAQUETE);
+    atualizarPoderesJogador(sala, j1);
+    atualizarPoderesJogador(sala, j2);
+
+    // move as raquetes (jogador travado pelo poder Congelar Oponente não se move)
+    if (!j1.travado) {
+      if (j1.cima) j1.y = Math.max(0, j1.y - VELOCIDADE_RAQUETE);
+      if (j1.baixo) j1.y = Math.min(ALTURA - j1.altura, j1.y + VELOCIDADE_RAQUETE);
+    }
+    if (!j2.travado) {
+      if (j2.cima) j2.y = Math.max(0, j2.y - VELOCIDADE_RAQUETE);
+      if (j2.baixo) j2.y = Math.min(ALTURA - j2.altura, j2.y + VELOCIDADE_RAQUETE);
+    }
+    j1.y = Math.max(0, Math.min(ALTURA - j1.altura, j1.y));
+    j2.y = Math.max(0, Math.min(ALTURA - j2.altura, j2.y));
 
     const bola = sala.bola;
-    if (!bola.parada) {
-      bola.x += bola.velX;
-      bola.y += bola.velY;
+    if (!bola.parada && !sala.bolaCongelada) {
+      bola.x += bola.velX * sala.fatorVelocidadeBola;
+      bola.y += bola.velY * sala.fatorVelocidadeBola;
 
       if (bola.y - bola.raio < 0 || bola.y + bola.raio > ALTURA) {
         bola.velY *= -1;
@@ -148,12 +328,28 @@ function iniciarFisica(sala) {
       if (
         bola.x - bola.raio < 20 + RAQUETE_LARGURA &&
         bola.y > j1.y &&
-        bola.y < j1.y + RAQUETE_ALTURA &&
+        bola.y < j1.y + j1.altura &&
         bola.velX < 0
       ) {
-        bola.velX *= -1.05;
-        const impacto = (bola.y - (j1.y + RAQUETE_ALTURA / 2)) / (RAQUETE_ALTURA / 2);
+        const impacto = (bola.y - (j1.y + j1.altura / 2)) / (j1.altura / 2);
+        if (j1.poderes.superChute.armado) {
+          const cfg = CATALOGO_PODERES.superChute.niveis[j1.poderes.superChute.nivel - 1];
+          bola.velX = Math.abs(bola.velX) * cfg.multiplicador;
+          j1.poderes.superChute.armado = false;
+          j1.poderes.superChute.cooldownRestante = CATALOGO_PODERES.superChute.cooldown;
+        } else {
+          bola.velX *= -1.05;
+        }
         bola.velY = impacto * 5;
+
+        if (j1.poderes.bolaFantasma.armado) {
+          const cfg = CATALOGO_PODERES.bolaFantasma.niveis[j1.poderes.bolaFantasma.nivel - 1];
+          j1.poderes.bolaFantasma.armado = false;
+          j1.poderes.bolaFantasma.ativo = true;
+          j1.poderes.bolaFantasma.tempoRestanteEfeito = cfg.duracao;
+          j1.poderes.bolaFantasma.cooldownRestante = CATALOGO_PODERES.bolaFantasma.cooldown;
+          sala.fantasma.ativoPara = 1;
+        }
       }
 
       // colisão com jogador 2 (direita)
@@ -161,30 +357,78 @@ function iniciarFisica(sala) {
       if (
         bola.x + bola.raio > xJogador2 &&
         bola.y > j2.y &&
-        bola.y < j2.y + RAQUETE_ALTURA &&
+        bola.y < j2.y + j2.altura &&
         bola.velX > 0
       ) {
-        bola.velX *= -1.05;
-        const impacto = (bola.y - (j2.y + RAQUETE_ALTURA / 2)) / (RAQUETE_ALTURA / 2);
+        const impacto = (bola.y - (j2.y + j2.altura / 2)) / (j2.altura / 2);
+        if (j2.poderes.superChute.armado) {
+          const cfg = CATALOGO_PODERES.superChute.niveis[j2.poderes.superChute.nivel - 1];
+          bola.velX = -Math.abs(bola.velX) * cfg.multiplicador;
+          j2.poderes.superChute.armado = false;
+          j2.poderes.superChute.cooldownRestante = CATALOGO_PODERES.superChute.cooldown;
+        } else {
+          bola.velX *= -1.05;
+        }
         bola.velY = impacto * 5;
+
+        if (j2.poderes.bolaFantasma.armado) {
+          const cfg = CATALOGO_PODERES.bolaFantasma.niveis[j2.poderes.bolaFantasma.nivel - 1];
+          j2.poderes.bolaFantasma.armado = false;
+          j2.poderes.bolaFantasma.ativo = true;
+          j2.poderes.bolaFantasma.tempoRestanteEfeito = cfg.duracao;
+          j2.poderes.bolaFantasma.cooldownRestante = CATALOGO_PODERES.bolaFantasma.cooldown;
+          sala.fantasma.ativoPara = 0;
+        }
       }
 
-      // ponto para jogador 2
+      // ponto para jogador 2 — a não ser que o Escudo do jogador 1 bloqueie
       if (bola.x < 0) {
-        j2.pontos++;
-        Object.assign(bola, novaBola(1));
+        const escudo = j1.poderes.escudo;
+        if (escudo.nivel > 0 && escudo.cooldownRestante <= 0) {
+          const cfg = CATALOGO_PODERES.escudo.niveis[escudo.nivel - 1];
+          escudo.cooldownRestante = cfg.cooldown;
+          if (Math.random() < cfg.chance) {
+            bola.x = bola.raio + 1;
+            bola.velX = Math.abs(bola.velX);
+            j1.mensagem = { texto: "Escudo bloqueou o gol!", cor: "#00e5ff", tempo: 2 };
+          } else {
+            j2.pontos++;
+            Object.assign(bola, novaBola(1));
+            j1.mensagem = { texto: "Escudo falhou...", cor: "#888", tempo: 2 };
+          }
+        } else {
+          j2.pontos++;
+          Object.assign(bola, novaBola(1));
+        }
       }
 
-      // ponto para jogador 1
+      // ponto para jogador 1 — a não ser que o Escudo do jogador 2 bloqueie
       if (bola.x > LARGURA) {
-        j1.pontos++;
-        Object.assign(bola, novaBola(-1));
+        const escudo = j2.poderes.escudo;
+        if (escudo.nivel > 0 && escudo.cooldownRestante <= 0) {
+          const cfg = CATALOGO_PODERES.escudo.niveis[escudo.nivel - 1];
+          escudo.cooldownRestante = cfg.cooldown;
+          if (Math.random() < cfg.chance) {
+            bola.x = LARGURA - bola.raio - 1;
+            bola.velX = -Math.abs(bola.velX);
+            j2.mensagem = { texto: "Escudo bloqueou o gol!", cor: "#00e5ff", tempo: 2 };
+          } else {
+            j1.pontos++;
+            Object.assign(bola, novaBola(-1));
+            j2.mensagem = { texto: "Escudo falhou...", cor: "#888", tempo: 2 };
+          }
+        } else {
+          j1.pontos++;
+          Object.assign(bola, novaBola(-1));
+        }
       }
+
+      sala.bolasExtras = sala.bolasExtras.filter((b) => moverBolaExtra(sala, b));
     }
 
     j1.socket.emit("estadoJogo", estadoParaCliente(sala, 0));
     j2.socket.emit("estadoJogo", estadoParaCliente(sala, 1));
-  }, 1000 / 60);
+  }, 1000 * DT);
 
   sala.intervaloTempo = setInterval(() => {
     if (sala.acabou || sala.bola.parada) return;
@@ -237,24 +481,8 @@ io.on("connection", (socket) => {
       const idSala = crypto.randomUUID();
       const sala = novaSala(idSala);
 
-      sala.jogadores.push({
-        socket: filaEspera,
-        usuarioId: filaEspera.usuarioId,
-        username: filaEspera.usernameEsperando,
-        y: ALTURA / 2 - RAQUETE_ALTURA / 2,
-        cima: false,
-        baixo: false,
-        pontos: 0
-      });
-      sala.jogadores.push({
-        socket,
-        usuarioId: socket.usuarioId,
-        username: usuario.username,
-        y: ALTURA / 2 - RAQUETE_ALTURA / 2,
-        cima: false,
-        baixo: false,
-        pontos: 0
-      });
+      sala.jogadores.push(criarJogador(filaEspera, filaEspera.usuarioId, filaEspera.usernameEsperando));
+      sala.jogadores.push(criarJogador(socket, socket.usuarioId, usuario.username));
 
       salas.set(idSala, sala);
       filaEspera.salaId = idSala;
@@ -288,6 +516,87 @@ io.on("connection", (socket) => {
     if (!jogador) return;
     jogador.cima = direcao === "cima";
     jogador.baixo = direcao === "baixo";
+  });
+
+  socket.on("usarPoder", ({ poderId }) => {
+    const sala = salas.get(socket.salaId);
+    if (!sala || sala.acabou) return;
+    if (!IDS_PODERES_ATIVAVEIS.includes(poderId)) return;
+
+    const jogador = sala.jogadores.find((j) => j.socket === socket);
+    if (!jogador) return;
+    const oponente = sala.jogadores.find((j) => j !== jogador);
+
+    const p = jogador.poderes[poderId];
+    const definicao = CATALOGO_PODERES[poderId];
+    if (!p || p.nivel <= 0 || p.cooldownRestante > 0 || p.ativo || p.armado) return;
+    const cfg = definicao.niveis[p.nivel - 1];
+
+    switch (poderId) {
+      case "superChute":
+      case "bolaFantasma":
+        p.armado = true; // o efeito acontece de verdade na próxima rebatida
+        break;
+
+      case "raqueteGrande": {
+        const alturaAntiga = jogador.altura;
+        const alturaNova = RAQUETE_ALTURA * cfg.multiplicador;
+        jogador.y -= (alturaNova - alturaAntiga) / 2;
+        jogador.altura = alturaNova;
+        p.ativo = true;
+        p.tempoRestanteEfeito = cfg.duracao;
+        p.cooldownRestante = definicao.cooldown;
+        break;
+      }
+
+      case "cameraLenta":
+        sala.fatorVelocidadeBola = cfg.fator;
+        p.ativo = true;
+        p.tempoRestanteEfeito = cfg.duracao;
+        p.cooldownRestante = definicao.cooldown;
+        break;
+
+      case "congelarOponente":
+        if (oponente) oponente.travado = true;
+        p.ativo = true;
+        p.tempoRestanteEfeito = cfg.duracao;
+        p.cooldownRestante = definicao.cooldown;
+        break;
+
+      case "multibola":
+        for (let i = 0; i < cfg.extras; i++) {
+          sala.bolasExtras.push({
+            x: sala.bola.x,
+            y: sala.bola.y,
+            raio: 8,
+            velX: (Math.random() < 0.5 ? -1 : 1) * (2 + Math.random() * 2),
+            velY: Math.random() * 4 - 2 || 2
+          });
+        }
+        p.ativo = true;
+        p.tempoRestanteEfeito = cfg.duracao;
+        p.cooldownRestante = definicao.cooldown;
+        break;
+
+      case "congelarBola":
+        sala.bolaCongelada = true;
+        p.ativo = true;
+        p.tempoRestanteEfeito = cfg.duracao;
+        p.cooldownRestante = definicao.cooldown;
+        break;
+
+      case "sorte":
+        p.cooldownRestante = definicao.cooldown;
+        if (Math.random() < cfg.chance) {
+          jogador.pontos++;
+          const direcaoServico = jogador === sala.jogadores[0] ? -1 : 1;
+          Object.assign(sala.bola, novaBola(direcaoServico));
+          jogador.mensagem = { texto: "SORTE GRANDE! Ponto garantido!", cor: "#ffcc00", tempo: 2 };
+        } else {
+          jogador.mensagem = { texto: "Sem sorte dessa vez...", cor: "#888", tempo: 2 };
+        }
+        break;
+    }
   });
 
   socket.on("disconnect", () => {
