@@ -2,11 +2,12 @@
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>Pong</title>
 <style>
   body {
     margin: 0;
-    height: 100vh;
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -14,6 +15,20 @@
     background: #111;
     font-family: Arial, sans-serif;
     color: #eee;
+    padding: 10px;
+    box-sizing: border-box;
+  }
+  @media (max-height: 480px) {
+    body {
+      justify-content: flex-start;
+    }
+    h1 {
+      font-size: 18px;
+      margin: 2px 0 6px 0;
+    }
+    body > p {
+      display: none;
+    }
   }
   h1 {
     margin: 0 0 10px 0;
@@ -22,6 +37,55 @@
   canvas {
     background: #000;
     border: 2px solid #555;
+    max-width: 100%;
+    height: auto;
+    touch-action: none;
+  }
+  #controlesToque {
+    display: none;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 800px;
+    margin-top: 8px;
+    gap: 12px;
+  }
+  .botaoToque {
+    flex: 1;
+    padding: 22px;
+    font-size: 28px;
+    text-align: center;
+    background: #222;
+    border: 2px solid #555;
+    border-radius: 10px;
+    color: #fff;
+    user-select: none;
+  }
+  #controlesPoderToque {
+    display: none;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    width: 100%;
+    max-width: 800px;
+    margin-top: 8px;
+  }
+  .botaoPoderToque {
+    padding: 10px 4px;
+    font-size: 12px;
+    text-align: center;
+    background: #222;
+    border: 2px solid #555;
+    border-radius: 8px;
+    color: #fff;
+    user-select: none;
+  }
+  @media (hover: none) and (pointer: coarse), (max-width: 700px) {
+    #controlesToque,
+    #controlesPoderToque {
+      display: flex;
+    }
+    #controlesPoderToque {
+      display: grid;
+    }
   }
   p {
     color: #999;
@@ -69,6 +133,8 @@
   }
   .botoesMenu {
     display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
     gap: 14px;
   }
   #botaoLoja,
@@ -265,7 +331,13 @@
       <button id="botaoVoltarOpcoes">Voltar</button>
     </div>
   </div>
+  <div id="controlesToque">
+    <div class="botaoToque" id="botaoTocarCima">▲</div>
+    <div class="botaoToque" id="botaoTocarBaixo">▼</div>
+  </div>
+  <div id="controlesPoderToque"></div>
   <p>Você: W / S &nbsp;&nbsp;|&nbsp;&nbsp; Espaço: lançar &nbsp;&nbsp;|&nbsp;&nbsp; E, 1-7: poderes da loja &nbsp;&nbsp;|&nbsp;&nbsp; M: música &nbsp;&nbsp;|&nbsp;&nbsp; R: reiniciar</p>
+  <p style="font-size:12px;">No celular: toque em ▲▼ pra mover, toque na quadra pra lançar a bola.</p>
 
 <script>
 const canvas = document.getElementById("jogo");
@@ -824,6 +896,65 @@ document.addEventListener("keydown", (e) => {
 document.addEventListener("keyup", (e) => {
   if (e.key === "w" || e.key === "W") jogador1.cima = false;
   if (e.key === "s" || e.key === "S") jogador1.baixo = false;
+});
+
+// --- controles de toque (celular) ---
+function ativarPoder(idPoder) {
+  if (!jogoIniciado || jogoAcabou) return;
+  const p = poderes[idPoder];
+  if (p.nivel > 0 && p.cooldownRestante <= 0 && !p.ativo && !p.armado) {
+    p.ativar();
+  }
+}
+
+function ligarBotaoToque(elemento, aoIniciar, aoParar) {
+  const iniciar = (e) => {
+    e.preventDefault();
+    if (!audioCtx) iniciarMusica();
+    aoIniciar();
+  };
+  const parar = (e) => {
+    e.preventDefault();
+    if (aoParar) aoParar();
+  };
+  elemento.addEventListener("touchstart", iniciar);
+  elemento.addEventListener("mousedown", iniciar);
+  if (aoParar) {
+    elemento.addEventListener("touchend", parar);
+    elemento.addEventListener("mouseup", parar);
+    elemento.addEventListener("mouseleave", parar);
+  }
+}
+
+ligarBotaoToque(
+  document.getElementById("botaoTocarCima"),
+  () => (jogador1.cima = true),
+  () => (jogador1.cima = false)
+);
+ligarBotaoToque(
+  document.getElementById("botaoTocarBaixo"),
+  () => (jogador1.baixo = true),
+  () => (jogador1.baixo = false)
+);
+
+canvas.addEventListener("touchstart", (e) => {
+  if (!audioCtx) iniciarMusica();
+  if (bola.parada && !jogoAcabou) bola.parada = false;
+});
+canvas.addEventListener("click", () => {
+  if (!audioCtx) iniciarMusica();
+  if (bola.parada && !jogoAcabou) bola.parada = false;
+});
+
+// monta os botõezinhos E,1-7 pro celular, reaproveitando o mesmo mapeamento do teclado
+const TECLA_TOQUE_PARA_PODER = { E: "superChute", ...TECLA_PARA_PODER };
+const containerPoderToque = document.getElementById("controlesPoderToque");
+Object.entries(TECLA_TOQUE_PARA_PODER).forEach(([tecla, idPoder]) => {
+  const botao = document.createElement("div");
+  botao.className = "botaoPoderToque";
+  botao.textContent = tecla.toUpperCase();
+  ligarBotaoToque(botao, () => ativarPoder(idPoder), null);
+  containerPoderToque.appendChild(botao);
 });
 
 // --- níveis de dificuldade da IA ---

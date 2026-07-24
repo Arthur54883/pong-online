@@ -514,17 +514,22 @@ function desenharEstado(estado) {
   ctx.fillRect(20, estado.meuY, RAQUETE_LARGURA, estado.minhaAltura);
   ctx.fillRect(LARGURA - 20 - RAQUETE_LARGURA, estado.oponenteY, RAQUETE_LARGURA, estado.oponenteAltura);
 
+  // o servidor manda a posição "real" (jogador 1 sempre à esquerda de verdade).
+  // como aqui desenhamos "eu" sempre à esquerda na tela, quem for o jogador 2 de
+  // verdade precisa ver a bola espelhada, senão ela nunca parece chegar na raquete certa.
+  const espelhar = (x) => (meuIndice === 1 ? LARGURA - x : x);
+
   // bola principal — invisível se a Bola Fantasma do oponente estiver ativa contra mim
   if (!estado.bola.oculta) {
     ctx.beginPath();
-    ctx.arc(estado.bola.x, estado.bola.y, estado.bola.raio, 0, Math.PI * 2);
+    ctx.arc(espelhar(estado.bola.x), estado.bola.y, estado.bola.raio, 0, Math.PI * 2);
     ctx.fill();
   }
 
   // bolas extras do Multi-bola
   (estado.bolasExtras || []).forEach((b) => {
     ctx.beginPath();
-    ctx.arc(b.x, b.y, b.raio, 0, Math.PI * 2);
+    ctx.arc(espelhar(b.x), b.y, b.raio, 0, Math.PI * 2);
     ctx.fill();
   });
 
