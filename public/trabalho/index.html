@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Regras Sem Letra Miúda: proposta para deixar as regras de plataformas digitais mais claras, justas e fáceis de entender. Trabalho de Educação Digital do 9º ano.">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Regras Sem Letra Miúda</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400&display=swap">
+<style>
+/* Layout: uma coluna de leitura (~68ch); cada seção é uma "cláusula" numerada como num termo de uso, com marca-texto amarelo destacando o essencial */
+:root {
+  --paper: #f3f5f8;
+  --card: #ffffff;
+  --ink: #16213a;
+  --muted: #56607a;
+  --line: #d5dbe6;
+  --mark: #ffe066;
+  --mark-ink: #16213a;
+  --accent: #2d5bd8;
+  --ok: #1f7a4d;
+  --bad: #b23a3a;
+  --fine: #8a93a8;
+  --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f1524; --card: #182037; --ink: #e8ecf5; --muted: #a3adc4; --line: #2c3654;
+    --mark: #e6c442; --mark-ink: #141a2b; --accent: #8aa8ff; --ok: #5fd39a; --bad: #ff8a8a; --fine: #6f7a94;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f1524; --card: #182037; --ink: #e8ecf5; --muted: #a3adc4; --line: #2c3654;
+  --mark: #e6c442; --mark-ink: #141a2b; --accent: #8aa8ff; --ok: #5fd39a; --bad: #ff8a8a; --fine: #6f7a94;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--paper); color: var(--ink);
+  font-family: var(--body); font-size: 1.0625rem; line-height: 1.65;
+}
+.wrap {
+  max-width: 46rem; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 3rem 4rem;
+  display: flex; flex-direction: column; gap: 3.25rem;
+}
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; line-height: 1.1; margin: 0; }
+h1 { font-size: clamp(2.4rem, 7vw, 3.8rem); font-weight: 800; letter-spacing: -0.02em; }
+h2 { font-size: clamp(1.5rem, 4vw, 2rem); font-weight: 800; }
+h3 { font-size: 1.15rem; font-weight: 500; }
+p { margin: 0; }
+.eyebrow {
+  font-family: var(--mono); font-size: 0.78rem; text-transform: uppercase;
+  letter-spacing: 0.08em; color: var(--muted);
+}
+mark {
+  background: linear-gradient(transparent 12%, var(--mark) 12%, var(--mark) 88%, transparent 88%);
+  color: var(--mark-ink); padding: 0 0.15em; border-radius: 2px;
+}
+.stack { display: flex; flex-direction: column; gap: 1rem; }
+
+/* Abertura */
+header { display: flex; flex-direction: column; gap: 1.25rem; }
+.lede { font-size: 1.2rem; color: var(--muted); max-width: 36rem; }
+.fineprint {
+  font-size: 0.62rem; line-height: 1.35; color: var(--fine); text-align: justify;
+  border-top: 1px dashed var(--line); padding-top: 0.75rem;
+}
+.meta { display: flex; flex-wrap: wrap; gap: 0.5rem 1.25rem; font-size: 0.9rem; color: var(--muted); }
+
+/* Seções como cláusulas */
+section { display: flex; flex-direction: column; gap: 1.1rem; }
+.clause { display: flex; align-items: baseline; gap: 0.75rem; }
+.clause .num { font-family: var(--mono); font-size: 0.9rem; color: var(--accent); flex: none; }
+
+/* Pessoas */
+.people { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.9rem; }
+.person {
+  background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+  padding: 1rem 1.1rem; display: flex; flex-direction: column; gap: 0.35rem; min-width: 0;
+}
+.person b { font-family: var(--display); font-size: 1.1rem; }
+.person span { color: var(--muted); font-size: 0.95rem; }
+.note { font-size: 0.9rem; color: var(--muted); font-style: italic; }
+
+/* Lista de propostas */
+.ideas { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.9rem; }
+.ideas li { display: grid; grid-template-columns: 2.2rem minmax(0, 1fr); gap: 0.75rem; align-items: start; }
+.ideas .ic {
+  width: 2.2rem; height: 2.2rem; border-radius: 50%; display: grid; place-items: center;
+  background: var(--mark); color: var(--mark-ink); font-family: var(--mono); font-size: 0.85rem;
+}
+
+/* Antes e depois */
+.compare { background: var(--card); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.tabs { display: flex; border-bottom: 1px solid var(--line); }
+.tabs button {
+  flex: 1; font: inherit; font-weight: 700; padding: 0.8rem 1rem; border: 0; cursor: pointer;
+  background: transparent; color: var(--muted); border-bottom: 3px solid transparent;
+}
+.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+.tabs button:focus-visible { outline: 3px solid var(--accent); outline-offset: -3px; }
+.panel { padding: 1.25rem 1.25rem 1.4rem; display: flex; flex-direction: column; gap: 0.9rem; }
+.legal { font-size: 0.82rem; line-height: 1.45; text-align: justify; color: var(--muted); }
+.stat { font-family: var(--mono); font-size: 0.8rem; color: var(--fine); }
+.rule-card { display: flex; flex-direction: column; gap: 0.6rem; }
+.rule-row { display: grid; grid-template-columns: 1.6rem minmax(0, 1fr); gap: 0.5rem; }
+.yes { color: var(--ok); font-weight: 700; }
+.no { color: var(--bad); font-weight: 700; }
+
+/* Etapas */
+.steps { counter-reset: s; list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.8rem; }
+.steps li { counter-increment: s; display: grid; grid-template-columns: 2rem minmax(0, 1fr); gap: 0.6rem; }
+.steps li::before {
+  content: counter(s); font-family: var(--mono); color: var(--accent);
+  border: 1.5px solid var(--accent); border-radius: 6px; width: 1.7rem; height: 1.7rem;
+  display: grid; place-items: center; font-size: 0.85rem; margin-top: 0.1rem;
+}
+
+/* Benefícios */
+.benefits { display: grid; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); gap: 0.9rem; }
+.benefit { border-top: 3px solid var(--accent); padding-top: 0.7rem; display: flex; flex-direction: column; gap: 0.3rem; }
+.benefit b { font-family: var(--display); }
+
+.disclaimer {
+  background: var(--card); border: 1px dashed var(--line); border-radius: 10px;
+  padding: 1rem 1.1rem; font-size: 0.95rem; color: var(--muted);
+}
+
+/* Integrantes */
+.team { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 0.6rem; }
+.team li {
+  background: var(--card); border: 1px solid var(--line); border-radius: 999px;
+  padding: 0.45rem 1rem; font-weight: 700;
+}
+footer { font-size: 0.85rem; color: var(--muted); border-top: 1px solid var(--line); padding-top: 1.25rem; }
+
+@media (max-width: 520px) {
+  .people { grid-template-columns: minmax(0, 1fr); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .tabs button { transition: color .15s, border-color .15s; }
+}
+</style>
+
+<div class="wrap">
+
+  <header>
+    <p class="eyebrow">Educação Digital · 9º ano · Proposta do grupo</p>
+    <h1>Regras Sem <mark>Letra Miúda</mark></h1>
+    <p class="lede">Uma proposta para que as regras de jogos, redes sociais e aplicativos sejam escritas de um jeito que qualquer pessoa consiga ler, entender e concordar de verdade.</p>
+    <p class="fineprint" aria-hidden="true">Ao utilizar o Serviço, o Usuário declara ter lido, compreendido e aceitado integralmente os presentes Termos, bem como a Política de Privacidade e quaisquer diretrizes complementares, que poderão ser alteradas a qualquer tempo, a exclusivo critério da Plataforma, independentemente de notificação prévia, sendo responsabilidade do Usuário consultá-los periodicamente...</p>
+    <div class="meta">
+      <span>Entrega: 28/10/2026</span>
+      <span>Tema: regras de plataformas digitais</span>
+    </div>
+  </header>
+
+  <section aria-labelledby="problema">
+    <div class="clause"><span class="num">§1</span><h2 id="problema">O problema</h2></div>
+    <p>Quase todo aplicativo pede que a gente clique em <b>“Li e aceito os termos”</b>. Mas esses textos costumam ser <mark>muito longos, cheios de palavras difíceis</mark> e escondidos em letras pequenas.</p>
+    <p>Por isso, a maioria das pessoas aceita sem ler. Depois, se a conta é suspensa ou uma postagem é apagada, a pessoa nem sabe qual regra quebrou. Algumas regras também parecem injustas, como punir alguém <mark>sem avisar o motivo</mark> ou sem dar chance de explicar.</p>
+  </section>
+
+  <section aria-labelledby="pessoas">
+    <div class="clause"><span class="num">§2</span><h2 id="pessoas">As pessoas</h2></div>
+    <p>Essa dificuldade afeta pessoas diferentes de jeitos diferentes:</p>
+    <div class="people">
+      <div class="person"><b>Lucas, 13 anos</b><span>Joga online todo dia. Teve a conta bloqueada por 7 dias e não entendeu por quê.</span></div>
+      <div class="person"><b>Dona Marta, 68 anos</b><span>Começou a usar redes sociais agora. Acha os termos confusos e tem medo de clicar no lugar errado.</span></div>
+      <div class="person"><b>Júlia, 15 anos</b><span>Tem dislexia. Textos longos e sem divisão ficam muito cansativos de ler.</span></div>
+      <div class="person"><b>Rafael, 16 anos</b><span>Usa só o celular, com internet limitada. Páginas enormes demoram para abrir.</span></div>
+    </div>
+    <p class="note">Os personagens são fictícios e servem para mostrar exemplos reais de dificuldade.</p>
+  </section>
+
+  <section aria-labelledby="solucao">
+    <div class="clause"><span class="num">§3</span><h2 id="solucao">Nossa solução</h2></div>
+    <p>Propomos que toda plataforma mostre, antes do texto completo, um <mark>Resumo das Regras</mark>: uma página curta, clara e justa. Ela teria:</p>
+    <ul class="ideas">
+      <li><span class="ic">1m</span><div><h3>Leitura em 1 minuto</h3><p>As regras principais em até 10 frases curtas, com palavras do dia a dia.</p></div></li>
+      <li><span class="ic">✓✗</span><div><h3>Pode e não pode</h3><p>Uma lista separada do que é permitido e do que é proibido, com exemplos.</p></div></li>
+      <li><span class="ic">!</span><div><h3>O que acontece se eu quebrar uma regra</h3><p>As punições explicadas por nível: aviso, suspensão curta e banimento.</p></div></li>
+      <li><span class="ic">?</span><div><h3>Direito de explicar</h3><p>Quem for punido recebe o motivo e um botão para contestar a decisão.</p></div></li>
+      <li><span class="ic">Aa</span><div><h3>Fácil para todos</h3><p>Letra maior, bom contraste, opção de ouvir o texto em áudio e versão leve para celular.</p></div></li>
+      <li><span class="ic">Δ</span><div><h3>Aviso de mudança</h3><p>Quando uma regra mudar, a plataforma mostra só o que mudou, em destaque.</p></div></li>
+    </ul>
+  </section>
+
+  <section aria-labelledby="como">
+    <div class="clause"><span class="num">§4</span><h2 id="como">Como funcionaria</h2></div>
+    <p>Veja a mesma regra escrita do jeito comum e do jeito que propomos:</p>
+
+    <div class="compare">
+      <div class="tabs" role="tablist" aria-label="Comparar versões da regra">
+        <button role="tab" id="tab-antes" aria-selected="false" aria-controls="p-antes" tabindex="-1">Como é hoje</button>
+        <button role="tab" id="tab-depois" aria-selected="true" aria-controls="p-depois">Nossa proposta</button>
+      </div>
+      <div class="panel" role="tabpanel" id="p-antes" aria-labelledby="tab-antes" hidden>
+        <p class="legal">4.2. O Usuário compromete-se a não praticar, direta ou indiretamente, condutas que violem as Diretrizes da Comunidade, incluindo, sem limitação, a publicação de conteúdo ofensivo, discriminatório ou que infrinja direitos de terceiros, reservando-se a Plataforma o direito de, a seu exclusivo critério e sem aviso prévio, remover conteúdos, suspender ou encerrar contas, temporária ou definitivamente, não cabendo ao Usuário qualquer direito a indenização ou reembolso de itens virtuais adquiridos.</p>
+        <p class="stat">1 frase · 84 palavras · nenhum exemplo · não explica como recorrer</p>
+      </div>
+      <div class="panel" role="tabpanel" id="p-depois" aria-labelledby="tab-depois">
+        <div class="rule-card">
+          <h3>Regra 4: Respeite as outras pessoas</h3>
+          <div class="rule-row"><span class="no">✗</span><p>Não xingue, não ameace e não faça piada com a cor, religião, corpo ou jeito de alguém.</p></div>
+          <div class="rule-row"><span class="yes">✓</span><p>Você pode discordar e criticar ideias, desde que sem ofender a pessoa.</p></div>
+          <div class="rule-row"><span>!</span><p><b>Se quebrar a regra:</b> 1ª vez, aviso. 2ª vez, conta pausada por 3 dias. Casos graves podem levar ao banimento.</p></div>
+          <div class="rule-row"><span>?</span><p><b>Achou injusto?</b> Você recebe o motivo por mensagem e pode pedir revisão em até 7 dias.</p></div>
+        </div>
+        <p class="stat">frases curtas · exemplos · punição clara · direito de recorrer</p>
+      </div>
+    </div>
+
+    <p>Na prática, o uso seria assim:</p>
+    <ol class="steps">
+      <li><p>Ao criar a conta, a pessoa vê primeiro o Resumo das Regras, e não o texto jurídico.</p></li>
+      <li><p>Ela pode ler, ouvir em áudio ou abrir o texto completo, se quiser mais detalhes.</p></li>
+      <li><p>Antes de aceitar, responde a 2 perguntas rápidas para confirmar que entendeu.</p></li>
+      <li><p>Se receber uma punição, a mensagem diz qual regra foi quebrada e mostra o botão “Pedir revisão”.</p></li>
+      <li><p>Se as regras mudarem, aparece um aviso curto mostrando só o que mudou.</p></li>
+    </ol>
+  </section>
+
+  <section aria-labelledby="ajuda">
+    <div class="clause"><span class="num">§5</span><h2 id="ajuda">Quem seria ajudado</h2></div>
+    <div class="benefits">
+      <div class="benefit"><b>Crianças e adolescentes</b><span>Entendem o que podem fazer e evitam punições por não conhecer as regras.</span></div>
+      <div class="benefit"><b>Pessoas idosas</b><span>Usam a internet com mais segurança e menos medo de errar.</span></div>
+      <div class="benefit"><b>Quem tem dificuldade de leitura</b><span>Textos curtos, letra maior e áudio deixam a leitura possível.</span></div>
+      <div class="benefit"><b>Quem usa só o celular</b><span>A versão leve abre rápido, mesmo com internet fraca.</span></div>
+      <div class="benefit"><b>As próprias plataformas</b><span>Com regras claras, há menos brigas, menos reclamações e mais confiança.</span></div>
+    </div>
+    <p>Nossa proposta inclui mais pessoas porque <mark>ninguém deveria aceitar uma regra que não consegue entender</mark>. Quando as regras são claras e justas, todo mundo tem as mesmas condições de participar.</p>
+    <p class="disclaimer">Esta é uma <b>proposta</b> do grupo, e não um resultado já comprovado. Para saber se funciona, ela precisaria ser testada com usuários de verdade.</p>
+  </section>
+
+  <section aria-labelledby="integrantes">
+    <div class="clause"><span class="num">§6</span><h2 id="integrantes">Integrantes</h2></div>
+    <ul class="team">
+      <li>Nome do aluno 1</li>
+      <li>Nome do aluno 2</li>
+      <li>Nome do aluno 3</li>
+    </ul>
+  </section>
+
+  <footer>Trabalho de Educação Digital · 9º ano · Prof. Gabriel Bueno Bello · Entrega em 28/10/2026</footer>
+</div>
+
+<script>
+(function () {
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('[role="tab"]'));
+  function select(tab) {
+    tabs.forEach(function (t) {
+      var on = t === tab;
+      t.setAttribute('aria-selected', on ? 'true' : 'false');
+      t.tabIndex = on ? 0 : -1;
+      document.getElementById(t.getAttribute('aria-controls')).hidden = !on;
+    });
+  }
+  tabs.forEach(function (t, i) {
+    t.addEventListener('click', function () { select(t); });
+    t.addEventListener('keydown', function (e) {
+      if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+        var next = tabs[(i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length];
+        select(next); next.focus();
+      }
+    });
+  });
+})();
+</script>
+
+</body>
+</html>
